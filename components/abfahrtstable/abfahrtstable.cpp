@@ -58,7 +58,7 @@ class BoardTile : public tessera::Tile {
       const int fit = (height_ - top_ + gap_) / row;
       // The helper merges at most MAX_DEPARTURES into its lists, so more rows than that would always stand empty: cap
       // the row objects there (fewer LVGL objects, less layout memory) even when a huge tile could fit more.
-      const int want = max_rows_ > 0 ? std::min(max_rows_, MAX_DEPARTURES) : MAX_DEPARTURES;
+      const int want = max_rows_ > 0 ? std::min(max_rows_, static_cast<int>(MAX_DEPARTURES)) : static_cast<int>(MAX_DEPARTURES);
       rows_.resize(std::max(1, std::min(want, fit)));
       for (size_t i = 0; i < rows_.size(); ++i) make_row(rows_[i], c.parent, top_ + static_cast<int>(i) * row);
       note_ = ui::label(c.parent, Font::BODY, theme::MUTED);
