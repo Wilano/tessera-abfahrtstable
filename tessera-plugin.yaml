@@ -4,7 +4,7 @@
 # and sorted the departures of one or more line+destination pairs into a few short lists; the tile only draws them and
 # counts down on the screen's own clock.
 id: abfahrtstable
-version: 1.0.0
+version: 1.0.1
 api: "0.7"
 icon: bus
 maintainer: wilano
@@ -14,14 +14,14 @@ topics: [travel]
 requires:
   esphome: 2026.6.2
 boards: any
-flash_kb: 6
+flash_kb: 10
 
 tiles:
   - id: board
     name: tile_name
     icon: bus
     sizes: { min: 1x1, max: 3x3 }
-    memory: 1400
+    memory: 1600
     # The tile is placed on a sensor whose attributes already hold the board as parallel short lists (the helper of the
     # README builds them). `has_attributes` offers only such a sensor in the inspector; `attributes` are the lists the
     # tile gets. Lists of texts and numbers come whole (docs/MANIFEST.md); that is why the helper exposes parallel
@@ -36,4 +36,4 @@ tiles:
     options:
       - { id: header, kind: toggle, default: true, label: header, hint: header_hint }
       - { id: late, kind: toggle, default: true, label: late, hint: late_hint }
-      - { id: max_rows, kind: number, min: 0, max: 12, step: 1, unit: row, default: 0, label: max_rows, hint: max_rows_hint }
+      - { id: max_rows, kind: number, min: 0, max: 8, step: 1, unit: row, default: 0, label: max_rows, hint: max_rows_hint }
