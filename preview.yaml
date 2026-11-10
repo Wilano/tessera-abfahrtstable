@@ -29,4 +29,5 @@ states:
       lines: ["160", "12", "160", "R7"]
       tos: ["St. Ingbert Rendezvous Platz", "Saarbruecken Hbf", "St. Ingbert Rendezvous Platz", "Homburg Saar"]
       delays: [0, 2, 0, 5]
+      cancelled: [0, 0, 1, 0]
       stale: false

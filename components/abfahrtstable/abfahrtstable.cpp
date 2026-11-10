@@ -7,15 +7,18 @@
 namespace esphome::abfahrtstable {
 
 using tessera::Font;
+using tessera::Tone;
 namespace ui = tessera::ui;
 
-// One departure, as the helper sensor hands it over: which line, where it goes, when it leaves (seconds since 1970), and
-// how many minutes late it runs. The helper has already filtered, merged and sorted several line+destination pairs into
-// these parallel lists, so the board can be heterogeneous (every row its own line and destination).
+// One departure, as the helper sensor hands it over: which line, where it goes, when it leaves (seconds since 1970), how
+// many minutes late it runs, and whether it is cancelled. The helper has already filtered, merged and sorted several
+// line+destination pairs into these parallel lists, so the board can be heterogeneous (every row its own line and
+// destination).
 struct Departure {
   std::string line, to;
   uint32_t at = 0;
   int delay = 0;
+  bool cancelled = false;
 };
 
 // The tile. A single cell: the next departure big, with its line and destination above it and the two after it below.
@@ -83,6 +86,7 @@ class BoardTile : public tessera::Tile {
     JsonArrayConst lines = data["attributes"]["lines"].as<JsonArrayConst>();
     JsonArrayConst tos = data["attributes"]["tos"].as<JsonArrayConst>();
     JsonArrayConst delays = data["attributes"]["delays"].as<JsonArrayConst>();
+    JsonArrayConst cancelled = data["attributes"]["cancelled"].as<JsonArrayConst>();
     const size_t n = std::min<size_t>(ats.size(), MAX_DEPARTURES);
     if (departures_.capacity() < n) departures_.reserve(MAX_DEPARTURES);
     for (size_t i = 0; i < n; ++i) {
@@ -91,6 +95,9 @@ class BoardTile : public tessera::Tile {
       d.line = i < lines.size() ? (lines[i] | "") : "";
       d.to = i < tos.size() ? (tos[i] | "") : "";
       d.delay = i < delays.size() ? (delays[i] | 0) : 0;
+      // The helper sends cancellation as a 0/1 number, not a bool: a list of booleans does not reach the tile (the app
+      // keeps only texts and numbers in an attribute list), a list of numbers does, like `delays`.
+      d.cancelled = i < cancelled.size() ? ((cancelled[i] | 0) != 0) : false;
       if (d.at) departures_.push_back(std::move(d));
     }
     std::sort(departures_.begin(), departures_.end(), [](const Departure &a, const Departure &b) { return a.at < b.at; });
@@ -115,7 +122,9 @@ class BoardTile : public tessera::Tile {
 
   void on_theme() override {
     for (auto &r : rows_) {
-      lv_obj_set_style_bg_color(r.badge, ui::color(theme::ACCENT), 0);
+      // Reset to the accent fill through set_fill (not a raw bg colour) so paint's mark_row, which also uses set_fill,
+      // still re-tints a late or cancelled badge after a look change.
+      ui::set_fill(r.badge, Tone::NORMAL, theme::ACCENT);
       ui::set_color(r.number, theme::ON_ACCENT);
       ui::set_color(r.to, list_ ? theme::INK : theme::MUTED);
       if (r.when) ui::set_color(r.when, theme::INK);
@@ -169,10 +178,34 @@ class BoardTile : public tessera::Tile {
     lv_obj_set_pos(r.to, x, r.y + (head_ - ui::line_height(Font::BODY)) / 2);
   }
 
-  // Where it goes, and how late it runs when the helper says a minute or more.
+  // Where it goes, and how late it runs when the helper says a minute or more. A cancelled departure shows no "+n": it
+  // is not late, it is not running, and the row says "Ausfall" instead.
   std::string with_delay(const Departure &d) const {
-    if (!late_ || d.delay <= 0) return d.to;
+    if (d.cancelled || !late_ || d.delay <= 0) return d.to;
     return d.to + "  " + tessera::format(plugin_->text("late"), static_cast<long>(d.delay));
+  }
+
+  // Strike a label through (a cancelled departure's destination); LVGL draws the line, the font keeps its size.
+  static void strike(lv_obj_t *label, bool on) {
+    if (label) lv_obj_set_style_text_decor(label, on ? LV_TEXT_DECOR_STRIKETHROUGH : LV_TEXT_DECOR_NONE, 0);
+  }
+
+  // Colour a row for its departure's state, without rebuilding it. The line badge carries the state as a fill (amber is
+  // Home Assistant's warning colour and only reads as a fill, never as faint text): the screen's accent normally, amber
+  // when the departure runs late, red when it is cancelled. A cancelled run also reads red with its destination struck
+  // through. nullptr (an empty or message row) resets everything.
+  void mark_row(Row &r, const Departure *d) {
+    const bool cancelled = d && d->cancelled;
+    const bool late = d && !cancelled && late_ && d->delay > 0;
+    ui::set_fill(r.badge, cancelled ? Tone::ALERT : late ? Tone::BUSY : Tone::NORMAL, theme::ACCENT);
+    // The number reads white on the accent and the red. The amber badge (Tone::BUSY) is Home Assistant's bright amber,
+    // the same colour in both looks, so its number needs dark ink in both — theme::INK turns light in the dark look and
+    // the digit vanishes on the amber. PRESET_INK_DARK is the near-black that stays dark in either look (it dresses the
+    // light-preset chips for the same reason).
+    ui::set_color(r.number, late ? theme::PRESET_INK_DARK : theme::ON_ACCENT);
+    ui::set_tone(r.to, cancelled ? Tone::ALERT : Tone::NORMAL, list_ ? theme::INK : theme::MUTED);
+    strike(r.to, cancelled);
+    if (r.when) ui::set_tone(r.when, cancelled ? Tone::ALERT : Tone::NORMAL, theme::INK);
   }
 
   // How a departure's time reads, every row the same way, in whole minutes — never seconds. Minutes: "5 min" until it
@@ -193,18 +226,34 @@ class BoardTile : public tessera::Tile {
     Row &r = rows_[0];
     if (why) {
       place_row(r, "", "", "");
+      mark_row(r, nullptr);
       big_text(plugin_->text(why), Font::BODY_LARGE, theme::MUTED);
+      ui::set_tone(big_, Tone::NORMAL, theme::MUTED);
       ui::set_text(later_, "");
       return;
     }
     const Departure &d = *next[0];
     place_row(r, d.line, with_delay(d), "");
-    const std::string when = when_text(d.at, now);
-    // The face is chosen for the shape of the time, not its digits, so it never jumps a size as the minute changes.
-    const std::string shape = digits_as_zero(when);
-    const Font alone = fitting(shape, height_ - head_);
-    const bool with_later = fitting(shape, height_ - head_ - ui::line_height(Font::BODY)) == alone;
-    big_text(when, alone, theme::INK, with_later);
+    mark_row(r, &d);
+    bool with_later = true;
+    if (d.cancelled) {
+      // A cancelled next departure has no countdown: the big face says "Ausfall", red, and the destination above is
+      // struck through (mark_row). The ones after it still count down below.
+      const std::string word = plugin_->text("cancelled");
+      const Font face = fitting(word, height_ - head_ - ui::line_height(Font::BODY));
+      big_text(word, face, theme::INK, true);
+      ui::set_tone(big_, Tone::ALERT, theme::INK);
+    } else {
+      const std::string when = when_text(d.at, now);
+      // The face is chosen for the shape of the time, not its digits, so it never jumps a size as the minute changes.
+      const std::string shape = digits_as_zero(when);
+      const Font alone = fitting(shape, height_ - head_);
+      with_later = fitting(shape, height_ - head_ - ui::line_height(Font::BODY)) == alone;
+      big_text(when, alone, theme::INK, with_later);
+      // The time stays the screen's ink so it reads large and clear; the amber line badge (mark_row) and the "+n" behind
+      // the destination carry the delay.
+      ui::set_tone(big_, Tone::NORMAL, theme::INK);
+    }
     std::string list;
     for (size_t i = 1; i < next.size() && i < 3; ++i) {
       if (!list.empty()) list += " · ";
@@ -243,13 +292,20 @@ class BoardTile : public tessera::Tile {
     for (size_t i = 0; i < rows_.size(); ++i) {
       if (i == 0 && why) {
         place_row(rows_[0], "", plugin_->text(why), "");
+        mark_row(rows_[0], nullptr);
         continue;
       }
       if (why || i >= next.size()) {
         place_row(rows_[i], "", "", "");
+        mark_row(rows_[i], nullptr);
         continue;
       }
-      place_row(rows_[i], next[i]->line, with_delay(*next[i]), when_text(next[i]->at, now));
+      const Departure *d = next[i];
+      // A cancelled departure keeps its row and its line and destination (struck through), but its time reads "Ausfall"
+      // instead of a countdown that would never come.
+      const std::string when = d->cancelled ? plugin_->text("cancelled") : when_text(d->at, now);
+      place_row(rows_[i], d->line, with_delay(*d), when);
+      mark_row(rows_[i], d);
     }
     // The bottom row says when the times are old, if there is room below the rows.
     const int used = top_ + static_cast<int>(rows_.size()) * (head_ + gap_);

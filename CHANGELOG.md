@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 - 2026-11-10
+- Delays now stand out: a departure that runs late keeps its "+2" and its line badge turns amber, so a late one catches
+  the eye on the board.
+- Cancellations show instead of vanishing: a cancelled departure keeps its row with its line and destination struck
+  through and reads "Cancelled" (German "Ausfall") where its countdown would be.
+- The helper sensor gains a `cancelled` list (1 for a cancelled run, 0 otherwise) and no longer drops cancelled runs. Update
+  your template helper from the README (one changed line and one new attribute) and run *Template: Reload*.
+
 ## 1.1.1 - 2026-11-10
 - Fix a build regression that kept the firmware from compiling (the plugin went missing on the screen): a row-cap
   `std::min(max_rows_, MAX_DEPARTURES)` mixed an `int` with a `size_t`, which the compiler cannot match. No behaviour

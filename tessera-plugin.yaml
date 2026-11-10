@@ -4,8 +4,8 @@
 # and sorted the departures of one or more line+destination pairs into a few short lists; the tile only draws them and
 # counts down on the screen's own clock.
 id: abfahrtstable
-version: 1.1.1
-api: "0.7"
+version: 1.2.0
+api: "0.9"
 icon: bus
 maintainer: wilano
 license: MIT
@@ -28,7 +28,7 @@ tiles:
     # lists, not a list of objects (objects do not come through).
     domains: [sensor]
     has_attributes: [ats]
-    attributes: [ats, lines, tos, delays, stale]
+    attributes: [ats, lines, tos, delays, cancelled, stale]
     example: tile_example
     # How the editor draws the tile from its data (it cannot run the C++): the sensor's name as the title and its state
     # string as the value. The live tile instead draws a row per departure and counts down.
