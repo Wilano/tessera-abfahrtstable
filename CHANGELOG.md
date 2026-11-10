@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1 - 2026-11-10
+- Fix a build regression that kept the firmware from compiling (the plugin went missing on the screen): a row-cap
+  `std::min(max_rows_, MAX_DEPARTURES)` mixed an `int` with a `size_t`, which the compiler cannot match. No behaviour
+  change — the cap is the same.
+
 ## 1.1.0 - 2026-11-10
 - The countdown now reads in whole minutes everywhere, never seconds: the next departure shows "5 min" (and "now" under
   a minute) like the ones after it, instead of a ticking "4:32".

@@ -4,7 +4,7 @@
 # and sorted the departures of one or more line+destination pairs into a few short lists; the tile only draws them and
 # counts down on the screen's own clock.
 id: abfahrtstable
-version: 1.1.0
+version: 1.1.1
 api: "0.7"
 icon: bus
 maintainer: wilano
