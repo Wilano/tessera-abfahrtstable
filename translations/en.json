@@ -1,0 +1,28 @@
+{
+  "_meta": {
+    "name": "English"
+  },
+  "screen": {
+    "now": "now",
+    "minutes": "{n} min",
+    "then": "then {list}",
+    "none": "No departures",
+    "waiting": "Waiting for times",
+    "choose_sensor": "Choose the departures sensor",
+    "board": "Departures",
+    "old": "Times may be old",
+    "late": "+{n}"
+  },
+  "app": {
+    "name": "Departure board",
+    "summary": "A board of the next departures of one or more lines from a Home Assistant sensor, mixed and counting down.",
+    "tile_name": "Departure board",
+    "tile_example": "160 in 12 min to St. Ingbert",
+    "header": "Show the sensor's name",
+    "header_hint": "A title line above the rows when there is room. Every row still shows its own line and destination.",
+    "late": "Show delays",
+    "late_hint": "A departure that runs a minute or more late gets \"+2\" behind where it goes.",
+    "max_rows": "Rows at most",
+    "max_rows_hint": "0 fills the tile with as many rows as fit. Set a number to show fewer on a large tile."
+  }
+}

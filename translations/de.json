@@ -1,0 +1,28 @@
+{
+  "_meta": {
+    "name": "Deutsch"
+  },
+  "screen": {
+    "now": "jetzt",
+    "minutes": "{n} Min",
+    "then": "dann {list}",
+    "none": "Keine Abfahrten",
+    "waiting": "Warte auf Zeiten",
+    "choose_sensor": "Abfahrten-Sensor wählen",
+    "board": "Abfahrten",
+    "old": "Zeiten evtl. veraltet",
+    "late": "+{n}"
+  },
+  "app": {
+    "name": "Abfahrtstafel",
+    "summary": "Eine Tafel der nächsten Abfahrten einer oder mehrerer Linien aus einem Home-Assistant-Sensor, gemischt und mit Countdown.",
+    "tile_name": "Abfahrtstafel",
+    "tile_example": "160 in 12 Min nach St. Ingbert",
+    "header": "Sensor-Namen zeigen",
+    "header_hint": "Eine Titelzeile über den Zeilen, wenn Platz ist. Jede Zeile zeigt weiterhin ihre eigene Linie und ihr Ziel.",
+    "late": "Verspätungen zeigen",
+    "late_hint": "Eine Abfahrt, die eine Minute oder mehr zu spät kommt, bekommt \"+2\" hinter dem Ziel.",
+    "max_rows": "Zeilen maximal",
+    "max_rows_hint": "0 füllt die Kachel mit so vielen Zeilen, wie passen. Eine Zahl zeigt auf großer Kachel bewusst weniger."
+  }
+}

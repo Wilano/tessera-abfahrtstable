@@ -1,0 +1,4 @@
+# What a screen gets when it takes this plugin. The tile belongs to a Home Assistant sensor chosen in the editor, so the
+# app sends that sensor's state and attributes to the tile itself; the plugin needs no ESPHome sensors of its own and no
+# settings. Tessera includes this file from the screen's <name>.plugins.yaml and adds the components folder beside it.
+abfahrtstable:

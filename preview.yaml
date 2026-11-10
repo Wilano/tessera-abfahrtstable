@@ -1,0 +1,32 @@
+# What tools/preview.py shows (docs/PREVIEW.md): the tile on every kind of screen, fed the attributes the helper sensor
+# would carry. The departure moments are written with "{epoch+Nm}", which the bench renders as seconds since 1970 (the
+# shape the live attribute has), so the countdown never runs out. Four heterogeneous departures of three lines, as the
+# helper would have merged and sorted them.
+tiles:
+  - tile: board
+    name: Haltestelle
+    entity: sensor.abfahrten_tafel
+  - tile: board
+    name: Kleine Kachel
+    entity: sensor.abfahrten_tafel
+    sizes: [1x1]
+  - tile: board
+    name: Grosse Tafel
+    entity: sensor.abfahrten_tafel
+    sizes: [3x2]
+  - tile: board
+    name: Ohne Titel
+    entity: sensor.abfahrten_tafel
+    options: { header: false }
+    sizes: [2x2]
+
+states:
+  sensor.abfahrten_tafel:
+    state: "160 2 min | 12 14 min"
+    attributes:
+      friendly_name: Abfahrten Rathausplatz
+      ats: ["{epoch+2m}", "{epoch+14m}", "{epoch+33m}", "{epoch+54m}"]
+      lines: ["160", "12", "160", "R7"]
+      tos: ["St. Ingbert Rendezvous Platz", "Saarbruecken Hbf", "St. Ingbert Rendezvous Platz", "Homburg Saar"]
+      delays: [0, 2, 0, 5]
+      stale: false
