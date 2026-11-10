@@ -4,7 +4,7 @@
 # and sorted the departures of one or more line+destination pairs into a few short lists; the tile only draws them and
 # counts down on the screen's own clock.
 id: abfahrtstable
-version: 1.0.1
+version: 1.1.0
 api: "0.7"
 icon: bus
 maintainer: wilano
@@ -36,4 +36,15 @@ tiles:
     options:
       - { id: header, kind: toggle, default: true, label: header, hint: header_hint }
       - { id: late, kind: toggle, default: true, label: late, hint: late_hint }
+      # How the departure time reads: minutes only (default), the time of day, or both. One choice, so it never lands on
+      # the meaningless "neither" two independent toggles could.
+      - id: time_format
+        kind: choice
+        default: minutes
+        choices:
+          - { value: minutes, label: tf_minutes }
+          - { value: clock, label: tf_clock }
+          - { value: both, label: tf_both }
+        label: time_format
+        hint: time_format_hint
       - { id: max_rows, kind: number, min: 0, max: 8, step: 1, unit: row, default: 0, label: max_rows, hint: max_rows_hint }

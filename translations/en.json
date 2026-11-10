@@ -23,6 +23,11 @@
     "late": "Show delays",
     "late_hint": "A departure that runs a minute or more late gets \"+2\" behind where it goes.",
     "max_rows": "Rows at most",
-    "max_rows_hint": "0 fills the tile with as many rows as fit. Set a number to show fewer on a large tile."
+    "max_rows_hint": "0 fills the tile with as many rows as fit. Set a number to show fewer on a large tile.",
+    "time_format": "Time format",
+    "time_format_hint": "How the departure time reads: minutes only (countdown, \"now\" under a minute), the time of day (24h), or both (\"5 min · 14:20\").",
+    "tf_minutes": "Minutes only",
+    "tf_clock": "Clock only",
+    "tf_both": "Minutes + clock"
   }
 }

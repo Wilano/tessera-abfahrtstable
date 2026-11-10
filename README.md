@@ -1,8 +1,9 @@
 # Departure board
 
 A tile that shows the next departures of **one or more** lines from a stop, mixed into one board and sorted by when
-they leave — every row with its own line and destination. The screen counts down on its own clock: the next departure to
-the second, the ones after it in whole minutes; an hour or more away is shown as a time of day.
+they leave — every row with its own line and destination. The screen counts down on its own clock in whole minutes: the
+next departure and the ones after it all read "5 min" (and "now" under a minute). You can switch the time to the clock
+(24h) instead, or show both — "5 min · 14:20".
 
 The tile does **not** fetch anything itself. It belongs to a **Home Assistant sensor** — a small template helper you add
 once — that reads a departures integration, keeps the line and destination pairs you chose, merges and sorts them, and
@@ -88,8 +89,9 @@ template:
 1. Add the plugin to a screen in Tessera (Plugins, or the Plugins tab of the screen). The screen builds once.
 2. In Layout, place the **Departure board** tile from the library's Plugins group.
 3. In the inspector, choose your **Abfahrten Tafel** sensor (only sensors that carry the board's lists are offered).
-4. Options: **Show the sensor's name** as a title, **Show delays** (`+2` behind a destination that runs late), and
-   **Rows at most** to cap a large tile (0 fills it).
+4. Options: **Show the sensor's name** as a title, **Show delays** (`+2` behind a destination that runs late),
+   **Time format** (minutes only — the default — the time of day in 24h, or both: `5 min · 14:20`), and **Rows at
+   most** to cap a large tile (0 fills it).
 
 ## Good to know
 
