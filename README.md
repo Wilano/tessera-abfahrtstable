@@ -19,10 +19,10 @@ departure, as many as fit. It was made for the 4-inch Guition (480 × 480), but 
 ### 1. Add the helper sensor to Home Assistant
 
 The plugin reads a sensor whose attributes already hold the board as parallel lists: `ats` (departure times as seconds
-since 1970), `lines`, `tos` (destinations), `delays` (minutes late), and a `stale` flag. A config-flow template helper
-cannot carry list attributes, so this is a `template:` sensor in YAML (in `configuration.yaml`, or a package /
-`templates.yaml` you include). After adding it, call the **template.reload** action (Developer Tools → Actions) or
-restart Home Assistant.
+since 1970), `lines`, `tos` (destinations), `delays` (minutes late), `cancelled` (1 for a cancelled run, 0 otherwise), and a
+`stale` flag. A config-flow template helper cannot carry list attributes, so this is a `template:` sensor in YAML (in
+`configuration.yaml`, or a package / `templates.yaml` you include). After adding it, call the **template.reload** action
+(Developer Tools → Actions) or restart Home Assistant.
 
 Copy the whole block below into `configuration.yaml` (or a package / included `templates.yaml`). **If you already have a
 `template:` block, paste only the `- trigger:` list item under your existing `template:` instead of a second
@@ -53,11 +53,12 @@ template:
         {% set ns = namespace(items=[]) %}
         {% for d in deps %}
           {% set at = as_timestamp(d.abfahrt) | int(0) %}
-          {% if at >= tnow and not d.ausfall %}
+          {% if at >= tnow %}
             {% for c in combos %}
               {% if d.linie == c.linie and d.ziel == c.ziel %}
                 {% set ns.items = ns.items + [{'at': at, 'line': d.linie, 'to': d.ziel,
-                                               'delay': d.verspaetung_minuten | int(0)}] %}
+                                               'delay': d.verspaetung_minuten | int(0),
+                                               'cancelled': 1 if d.ausfall | default(false) else 0}] %}
               {% endif %}
             {% endfor %}
           {% endif %}
@@ -80,6 +81,7 @@ template:
           lines: "{{ items | map(attribute='line') | list }}"
           tos: "{{ items | map(attribute='to') | list }}"
           delays: "{{ items | map(attribute='delay') | list }}"
+          cancelled: "{{ items | map(attribute='cancelled') | list }}"
           count: "{{ items | count }}"
           stale: "{{ states(src) in ['unavailable', 'unknown'] }}"
 ```
@@ -100,7 +102,11 @@ template:
 - Many departure integrations cap their list (the DELFI `haltestellen_abfahrtsanzeige` keeps **12** entries, all lines
   mixed). A single hourly line then shows **about two** matches within that window, however large the tile — the board
   is *up to* N rows and never invents one. To fill a large board, widen the source's cap first, or add more lines.
-- A departure that runs a minute or more late gets `+2` behind where it goes; turn **Show delays** off to leave it out.
+- A departure that runs a minute or more late gets `+2` behind where it goes and its line badge turns amber; turn
+  **Show delays** off to leave the `+2` out.
+- A cancelled departure keeps its row with its line and destination struck through and reads **Ausfall** where its
+  countdown would be, so it is not silently dropped. This needs the `cancelled` list in the helper above (the source
+  sensor's `ausfall` flag); without it nothing is marked.
 - When the source is away the tile keeps the last times it had and says they may be old.
 
 ## How it works

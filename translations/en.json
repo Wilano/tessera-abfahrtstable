@@ -11,7 +11,8 @@
     "choose_sensor": "Choose the departures sensor",
     "board": "Departures",
     "old": "Times may be old",
-    "late": "+{n}"
+    "late": "+{n}",
+    "cancelled": "Cancelled"
   },
   "app": {
     "name": "Departure board",
@@ -21,7 +22,7 @@
     "header": "Show the sensor's name",
     "header_hint": "A title line above the rows when there is room. Every row still shows its own line and destination.",
     "late": "Show delays",
-    "late_hint": "A departure that runs a minute or more late gets \"+2\" behind where it goes.",
+    "late_hint": "A departure that runs a minute or more late gets \"+2\" behind where it goes and its line badge turns amber. Cancellations always show as \"Cancelled\", struck through, whatever this is set to.",
     "max_rows": "Rows at most",
     "max_rows_hint": "0 fills the tile with as many rows as fit. Set a number to show fewer on a large tile.",
     "time_format": "Time format",

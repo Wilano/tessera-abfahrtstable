@@ -11,7 +11,8 @@
     "choose_sensor": "Abfahrten-Sensor wählen",
     "board": "Abfahrten",
     "old": "Zeiten evtl. veraltet",
-    "late": "+{n}"
+    "late": "+{n}",
+    "cancelled": "Ausfall"
   },
   "app": {
     "name": "Abfahrtstafel",
@@ -21,7 +22,7 @@
     "header": "Sensor-Namen zeigen",
     "header_hint": "Eine Titelzeile über den Zeilen, wenn Platz ist. Jede Zeile zeigt weiterhin ihre eigene Linie und ihr Ziel.",
     "late": "Verspätungen zeigen",
-    "late_hint": "Eine Abfahrt, die eine Minute oder mehr zu spät kommt, bekommt \"+2\" hinter dem Ziel.",
+    "late_hint": "Eine Abfahrt, die eine Minute oder mehr zu spät kommt, bekommt \"+2\" hinter dem Ziel und ihr Linien-Badge wird bernsteinfarben. Ausfälle erscheinen immer als \"Ausfall\", durchgestrichen – unabhängig von dieser Einstellung.",
     "max_rows": "Zeilen maximal",
     "max_rows_hint": "0 füllt die Kachel mit so vielen Zeilen, wie passen. Eine Zahl zeigt auf großer Kachel bewusst weniger.",
     "time_format": "Zeitformat",
