@@ -32,6 +32,8 @@ class BoardTile : public tessera::Tile {
     late_ = c.options["late"] | true;
     header_ = c.options["header"] | true;
     max_rows_ = c.options["max_rows"] | 0;
+    departures_.reserve(MAX_DEPARTURES);   // grow once, here, not on a data update or a tick
+    next_.reserve(MAX_DEPARTURES);
     list_ = c.columns >= 2;
     head_ = std::max(ui::line_height(Font::TITLE), ui::line_height(Font::BODY)) + ui::px(4);
     gap_ = ui::px(ui::large() ? 8 : 5);
@@ -49,7 +51,9 @@ class BoardTile : public tessera::Tile {
         top_ = title_h + gap_;
       }
       const int fit = (height_ - top_ + gap_) / row;
-      const int want = max_rows_ > 0 ? std::min(max_rows_, 12) : 12;
+      // The helper merges at most MAX_DEPARTURES into its lists, so more rows than that would always stand empty: cap
+      // the row objects there (fewer LVGL objects, less layout memory) even when a huge tile could fit more.
+      const int want = max_rows_ > 0 ? std::min(max_rows_, MAX_DEPARTURES) : MAX_DEPARTURES;
       rows_.resize(std::max(1, std::min(want, fit)));
       for (size_t i = 0; i < rows_.size(); ++i) make_row(rows_[i], c.parent, top_ + static_cast<int>(i) * row);
       note_ = ui::label(c.parent, Font::BODY, theme::MUTED);
@@ -69,12 +73,13 @@ class BoardTile : public tessera::Tile {
 
   void on_state(JsonObjectConst data) override {
     departures_.clear();
-    JsonObjectConst attrs = data["attributes"];
-    JsonArrayConst ats = attrs["ats"];
-    JsonArrayConst lines = attrs["lines"];
-    JsonArrayConst tos = attrs["tos"];
-    JsonArrayConst delays = attrs["delays"];
-    const size_t n = ats.size();
+    // The helper's parallel lists arrive under the entity's attributes (docs/FIRMWARE_API.md, "What on_state gets").
+    JsonArrayConst ats = data["attributes"]["ats"].as<JsonArrayConst>();
+    JsonArrayConst lines = data["attributes"]["lines"].as<JsonArrayConst>();
+    JsonArrayConst tos = data["attributes"]["tos"].as<JsonArrayConst>();
+    JsonArrayConst delays = data["attributes"]["delays"].as<JsonArrayConst>();
+    const size_t n = std::min<size_t>(ats.size(), MAX_DEPARTURES);
+    if (departures_.capacity() < n) departures_.reserve(MAX_DEPARTURES);
     for (size_t i = 0; i < n; ++i) {
       Departure d;
       d.at = ats[i] | 0u;
@@ -85,21 +90,22 @@ class BoardTile : public tessera::Tile {
     }
     std::sort(departures_.begin(), departures_.end(), [](const Departure &a, const Departure &b) { return a.at < b.at; });
     // The entity is there once Home Assistant has sent its state; before a sensor is chosen the tile gets {} and no state.
-    has_entity_ = data["state"].is<const char *>();
+    has_entity_ = !data["state"].isNull();
     wrong_ = std::string(data["wait"] | "") == "wrong_entity";
-    stale_ = attrs["stale"] | false;
+    stale_ = data["attributes"]["stale"] | false;
     name_ = data["name"] | "";
     if (title_) ui::set_text(title_, name_.empty() ? plugin_->text("board") : name_);
   }
 
   void on_tick(uint32_t now) override {
-    // The departures still to come: the second has not passed yet (a small grace so "now" lingers a moment).
-    std::vector<const Departure *> next;
+    // The departures still to come: the second has not passed yet (a small grace so "now" lingers a moment). next_ is a
+    // member and only cleared here, so the per-second tick allocates nothing once it has grown to its handful of slots.
+    next_.clear();
     for (const auto &d : departures_)
-      if (now && d.at + 30 >= now) next.push_back(&d);
-    const char *why = (!has_entity_ || wrong_) ? "choose_sensor" : !now ? "waiting" : next.empty() ? "none" : nullptr;
-    if (list_) paint_list(next, why, now);
-    else paint_single(next, why, now);
+      if (now && d.at + 30 >= now) next_.push_back(&d);
+    const char *why = (!has_entity_ || wrong_) ? "choose_sensor" : !now ? "waiting" : next_.empty() ? "none" : nullptr;
+    if (list_) paint_list(next_, why, now);
+    else paint_single(next_, why, now);
   }
 
   void on_theme() override {
@@ -248,6 +254,10 @@ class BoardTile : public tessera::Tile {
     ui::set_text(note_, stale_ && used + ui::line_height(Font::BODY) <= height_ ? plugin_->text("old") : "");
   }
 
+  // The helper never sends more than this (it caps its merged list), so neither the row objects nor the parsed vectors
+  // ever grow past it. Keeping both bounded is what keeps the tile within a fixed, small memory footprint.
+  static constexpr size_t MAX_DEPARTURES = 8;
+
   const tessera::Plugin *plugin_;
   int width_ = 0, height_ = 0, head_ = 0, gap_ = 0, top_ = 0, max_rows_ = 0;
   bool list_ = false, header_ = true, late_ = true, has_entity_ = false, wrong_ = false, stale_ = false;
@@ -255,6 +265,7 @@ class BoardTile : public tessera::Tile {
   std::vector<Row> rows_;
   lv_obj_t *title_{}, *big_{}, *later_{}, *note_{};
   std::vector<Departure> departures_;
+  std::vector<const Departure *> next_;
 };
 
 void Abfahrtstable::setup() {
