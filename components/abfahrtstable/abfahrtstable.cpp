@@ -20,8 +20,8 @@ struct Departure {
 
 // The tile. A single cell: the next departure big, with its line and destination above it and the two after it below.
 // Two columns or more: a row per departure, as many as fit, each with its own line badge and destination (the board
-// mixes lines). The helper sends new times when Home Assistant has them; the countdown runs every second on the screen's
-// own clock, and only a text that changes is set again.
+// mixes lines). The helper sends new times when Home Assistant has them; the countdown runs on the screen's own clock in
+// whole minutes (never seconds), and only a text that changes is set again.
 class BoardTile : public tessera::Tile {
  public:
   explicit BoardTile(const tessera::Plugin *plugin) : plugin_(plugin) {}
@@ -32,6 +32,11 @@ class BoardTile : public tessera::Tile {
     late_ = c.options["late"] | true;
     header_ = c.options["header"] | true;
     max_rows_ = c.options["max_rows"] | 0;
+    // How the departure time reads: minutes only (default, "now" under a minute), clock only (24h), or both
+    // ("5 min · 14:20"). A single choice, so it can never land on the meaningless "neither" an independent pair could.
+    const std::string tf = c.options["time_format"] | "minutes";
+    show_clock_ = (tf == "clock" || tf == "both");
+    show_minutes_ = !show_clock_ || tf == "both";   // minutes unless clock-only; keeps the time text never empty
     departures_.reserve(MAX_DEPARTURES);   // grow once, here, not on a data update or a tick
     next_.reserve(MAX_DEPARTURES);
     list_ = c.columns >= 2;
@@ -170,21 +175,18 @@ class BoardTile : public tessera::Tile {
     return d.to + "  " + tessera::format(plugin_->text("late"), static_cast<long>(d.delay));
   }
 
-  // How long until a departure leaves. The next one counts down to the second (12:05, 0:42), so you know exactly when to
-  // go; the ones after it in whole minutes, which is all a glance at them needs. An hour or more away is a time of day.
-  std::string when_text(uint32_t at, uint32_t now, bool exact = false) const {
-    if (exact) {
-      if (at <= now) return plugin_->text("now");
-      const uint32_t left = at - now;
-      if (left >= 3600) return tessera::clock_text(at);
-      char text[8];
-      snprintf(text, sizeof text, "%u:%02u", static_cast<unsigned>(left / 60), static_cast<unsigned>(left % 60));
-      return text;
-    }
-    if (at <= now + 59) return plugin_->text("now");
-    const uint32_t minutes = (at - now) / 60;
-    if (minutes >= 60) return tessera::clock_text(at);
-    return tessera::format(plugin_->text("minutes"), static_cast<long>(minutes));
+  // How a departure's time reads, every row the same way, in whole minutes — never seconds. Minutes: "5 min" until it
+  // leaves, "now" under a minute, and still minutes (never a time of day) however far off it is. Clock: the time of day
+  // (24h). Both: "5 min · 14:20". The screen's own clock drives it, but only the minute shows, so the text changes once
+  // a minute, not once a second.
+  std::string when_text(uint32_t at, uint32_t now) const {
+    std::string mins, clock;
+    if (show_minutes_)
+      mins = at <= now + 59 ? plugin_->text("now")
+                            : tessera::format(plugin_->text("minutes"), static_cast<long>((at - now) / 60));
+    if (show_clock_) clock = tessera::clock_text(at);
+    if (show_minutes_ && show_clock_) return mins + " · " + clock;
+    return show_clock_ ? clock : mins;
   }
 
   void paint_single(const std::vector<const Departure *> &next, const char *why, uint32_t now) {
@@ -197,8 +199,8 @@ class BoardTile : public tessera::Tile {
     }
     const Departure &d = *next[0];
     place_row(r, d.line, with_delay(d), "");
-    const std::string when = when_text(d.at, now, true);
-    // The face is chosen for the shape of the time, not its digits, so it never jumps a size as a second ticks by.
+    const std::string when = when_text(d.at, now);
+    // The face is chosen for the shape of the time, not its digits, so it never jumps a size as the minute changes.
     const std::string shape = digits_as_zero(when);
     const Font alone = fitting(shape, height_ - head_);
     const bool with_later = fitting(shape, height_ - head_ - ui::line_height(Font::BODY)) == alone;
@@ -247,7 +249,7 @@ class BoardTile : public tessera::Tile {
         place_row(rows_[i], "", "", "");
         continue;
       }
-      place_row(rows_[i], next[i]->line, with_delay(*next[i]), when_text(next[i]->at, now, i == 0));
+      place_row(rows_[i], next[i]->line, with_delay(*next[i]), when_text(next[i]->at, now));
     }
     // The bottom row says when the times are old, if there is room below the rows.
     const int used = top_ + static_cast<int>(rows_.size()) * (head_ + gap_);
@@ -261,6 +263,7 @@ class BoardTile : public tessera::Tile {
   const tessera::Plugin *plugin_;
   int width_ = 0, height_ = 0, head_ = 0, gap_ = 0, top_ = 0, max_rows_ = 0;
   bool list_ = false, header_ = true, late_ = true, has_entity_ = false, wrong_ = false, stale_ = false;
+  bool show_minutes_ = true, show_clock_ = false;
   std::string name_;
   std::vector<Row> rows_;
   lv_obj_t *title_{}, *big_{}, *later_{}, *note_{};

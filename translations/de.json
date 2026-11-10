@@ -23,6 +23,11 @@
     "late": "Verspätungen zeigen",
     "late_hint": "Eine Abfahrt, die eine Minute oder mehr zu spät kommt, bekommt \"+2\" hinter dem Ziel.",
     "max_rows": "Zeilen maximal",
-    "max_rows_hint": "0 füllt die Kachel mit so vielen Zeilen, wie passen. Eine Zahl zeigt auf großer Kachel bewusst weniger."
+    "max_rows_hint": "0 füllt die Kachel mit so vielen Zeilen, wie passen. Eine Zahl zeigt auf großer Kachel bewusst weniger.",
+    "time_format": "Zeitformat",
+    "time_format_hint": "Wie die Abfahrtszeit steht: nur Minuten (Countdown, „jetzt\" unter einer Minute), nur Uhrzeit (24 h) oder beides („5 Min · 14:20\").",
+    "tf_minutes": "Nur Minuten",
+    "tf_clock": "Nur Uhrzeit",
+    "tf_both": "Minuten + Uhrzeit"
   }
 }
