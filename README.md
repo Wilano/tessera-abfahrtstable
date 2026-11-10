@@ -23,9 +23,14 @@ cannot carry list attributes, so this is a `template:` sensor in YAML (in `confi
 `templates.yaml` you include). After adding it, call the **template.reload** action (Developer Tools → Actions) or
 restart Home Assistant.
 
+Copy the whole block below into `configuration.yaml` (or a package / included `templates.yaml`). **If you already have a
+`template:` block, paste only the `- trigger:` list item under your existing `template:` instead of a second
+`template:` key.** After adding or editing it, run the **template.reload** action (Developer Tools → Actions → *Template:
+Reload*) or restart Home Assistant.
+
 ```yaml
 # A departure board for Home Assistant: merges the line + destination pairs you choose into short lists the Tessera
-# "Departure board" tile draws. Edit only the two lines marked "configure".  After editing: template.reload.
+# "Departure board" tile draws. Edit only the two lines marked "configure".  After editing: run template.reload.
 template:
   - trigger:
       - platform: state
