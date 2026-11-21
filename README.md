@@ -40,11 +40,12 @@ template:
         minutes: "/1"
     variables:
       src: sensor.feuerwehr_neuweiler_sulzbach            # configure: the same departures sensor
-      # configure: the line + destination pairs to show, mixed. Add as many as you like; "linie" and "ziel" must match
-      # the source sensor's values exactly. One pair behaves like a single-line board.
+      # configure: the lines to show, mixed. Add as many as you like; "linie" must match the source sensor's values
+      # exactly. Give a "ziel" to pin one destination, or leave it out to show every destination of that line (both
+      # directions). One entry behaves like a single-line board.
       combos: >
         {{ [
-             {'linie': '160', 'ziel': 'St. Ingbert Rendezvous Platz'}
+             {'linie': '160'}
            ] }}
       # --- below here nothing needs changing ---
       items: >
@@ -55,7 +56,7 @@ template:
           {% set at = as_timestamp(d.abfahrt) | int(0) %}
           {% if at >= tnow %}
             {% for c in combos %}
-              {% if d.linie == c.linie and d.ziel == c.ziel %}
+              {% if d.linie == c.linie and (not c.ziel | default('') or d.ziel == c.ziel) %}
                 {% set ns.items = ns.items + [{'at': at, 'line': d.linie, 'to': d.ziel,
                                                'delay': d.verspaetung_minuten | int(0),
                                                'cancelled': 1 if d.ausfall | default(false) else 0}] %}
